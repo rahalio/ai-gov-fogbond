@@ -1,0 +1,715 @@
+openapi: 3.0.3
+info:
+  title: Fogbond
+  version: 0.1.0
+  description: >-
+    Edge-autonomy assurance bonds for AI agents on a tactical fog cloud.
+    Issues time-boxed operating bonds proving restore-to-function under jam,
+    disconnect and deception before commanders rely on agents in contested fight.
+  x-product-slug: ai-gov-fogbond
+  x-source: ai-in-gov/The Future of Warfare-ai-at-the-edge/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Agents
+    description: Edge agent families, nodes and diversity registry
+  - name: ResilienceProfiles
+    description: Disconnect, jam, malware and quiet-comms conditions
+  - name: Trials
+    description: Contested lab, exercise and live T&E evidence
+  - name: Bonds
+    description: Time-boxed Fogbond certificates and revocation
+  - name: Anomalies
+    description: Runtime health, deception and quarantine
+  - name: StateRestores
+    description: Intermittent sync inferred-versus-received accounting
+  - name: Reporting
+    description: Command coverage and monoculture dashboards
+paths:
+  /v1/agent-families:
+    get:
+      operationId: listAgentFamilies
+      tags: [Agents]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        "200":
+          description: Agent families page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeAgentFamily' }
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: enrolAgentFamily
+      tags: [Agents]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentFamilyCreate' }
+      responses:
+        "201":
+          description: Family enrolled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeAgentFamily' }
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/agent-families/{familyId}:
+    parameters:
+      - $ref: '#/components/parameters/FamilyId'
+    get:
+      operationId: getAgentFamily
+      tags: [Agents]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Agent family
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeAgentFamily' }
+        "404":
+          $ref: '#/components/responses/NotFound'
+  /v1/resilience-profiles:
+    get:
+      operationId: listResilienceProfiles
+      tags: [ResilienceProfiles]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        "200":
+          description: Profiles page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeResilienceProfile' }
+    post:
+      operationId: createResilienceProfile
+      tags: [ResilienceProfiles]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResilienceProfile' }
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeResilienceProfile' }
+  /v1/trials:
+    get:
+      operationId: listContestedTrials
+      tags: [Trials]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: environmentClass
+          in: query
+          schema: { type: string, enum: [lab, exercise, live] }
+      responses:
+        "200":
+          description: Trials page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeContestedTrial' }
+    post:
+      operationId: submitContestedTrial
+      tags: [Trials]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContestedTrialCreate' }
+      responses:
+        "201":
+          description: Trial recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeContestedTrial' }
+  /v1/bonds:
+    get:
+      operationId: listBonds
+      tags: [Bonds]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, expired, revoked, pending] }
+      responses:
+        "200":
+          description: Bonds page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeFogbondCertificate' }
+    post:
+      operationId: issueBond
+      tags: [Bonds]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BondIssueRequest' }
+      responses:
+        "201":
+          description: Bond issued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeFogbondCertificate' }
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/bonds/{bondId}:
+    parameters:
+      - $ref: '#/components/parameters/BondId'
+    get:
+      operationId: getBond
+      tags: [Bonds]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Bond certificate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeFogbondCertificate' }
+        "404":
+          $ref: '#/components/responses/NotFound'
+  /v1/bonds/{bondId}/revocation:
+    parameters:
+      - $ref: '#/components/parameters/BondId'
+    post:
+      operationId: revokeBond
+      tags: [Bonds]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+                quarantineOrderId: { type: string }
+      responses:
+        "200":
+          description: Bond revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeFogbondCertificate' }
+  /v1/anomalies:
+    get:
+      operationId: listAnomalies
+      tags: [Anomalies]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        "200":
+          description: Anomalies page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeAnomalyEvent' }
+    post:
+      operationId: reportAnomaly
+      tags: [Anomalies]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnomalyEventCreate' }
+      responses:
+        "201":
+          description: Anomaly accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeAnomalyEvent' }
+  /v1/anomalies/{anomalyId}/quarantine:
+    parameters:
+      - $ref: '#/components/parameters/AnomalyId'
+    post:
+      operationId: quarantineFromAnomaly
+      tags: [Anomalies]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [familyId]
+              properties:
+                familyId: { type: string }
+                rationale: { type: string }
+      responses:
+        "202":
+          description: Quarantine accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeQuarantineOrder' }
+  /v1/state-restores:
+    get:
+      operationId: listStateRestores
+      tags: [StateRestores]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        "200":
+          description: State restore records
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeStateRestoreRecord' }
+    post:
+      operationId: postStateRestore
+      tags: [StateRestores]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StateRestoreRecordCreate' }
+      responses:
+        "201":
+          description: State restore recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeStateRestoreRecord' }
+  /v1/reports/bond-coverage:
+    get:
+      operationId: getBondCoverageReport
+      tags: [Reporting]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: killChain
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Bond coverage and monoculture risk
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeBondCoverageReport' }
+components:
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+
+    FamilyId:
+      name: familyId
+      in: path
+      required: true
+      schema: { type: string }
+    BondId:
+      name: bondId
+      in: path
+      required: true
+      schema: { type: string }
+    AnomalyId:
+      name: anomalyId
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+    AgentFamily:
+      type: object
+      required: [id, name, diversityTags, killChainRoles]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        version: { type: string }
+        diversityTags:
+          type: array
+          items: { type: string }
+        killChainRoles:
+          type: array
+          items: { type: string }
+        quietCommsModes:
+          type: array
+          items: { type: string }
+        classification: { type: string }
+    AgentFamilyCreate:
+      type: object
+      required: [name, diversityTags, killChainRoles]
+      properties:
+        name: { type: string }
+        version: { type: string }
+        diversityTags:
+          type: array
+          items: { type: string }
+        killChainRoles:
+          type: array
+          items: { type: string }
+        quietCommsModes:
+          type: array
+          items: { type: string }
+    ResilienceProfile:
+      type: object
+      required: [id, name, maxDisconnectMinutes, restoreCriteria]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        maxDisconnectMinutes: { type: integer }
+        jamTolerance: { type: string }
+        malwareRestoreRequired: { type: boolean }
+        quietCommsRequired: { type: boolean }
+        restoreCriteria: { type: string }
+    ContestedTrial:
+      type: object
+      required: [id, familyId, environmentClass, outcome]
+      properties:
+        id: { type: string }
+        familyId: { type: string }
+        environmentClass: { type: string, enum: [lab, exercise, live] }
+        missionFunction: { type: string }
+        deceptionInjectsScored: { type: integer }
+        restoreSuccessRate: { type: number, format: float }
+        outcome: { type: string, enum: [pass, fail, conditional] }
+        completedAt: { type: string, format: date-time }
+    ContestedTrialCreate:
+      type: object
+      required: [familyId, environmentClass, missionFunction, outcome]
+      properties:
+        familyId: { type: string }
+        environmentClass: { type: string, enum: [lab, exercise, live] }
+        missionFunction: { type: string }
+        deceptionInjectsScored: { type: integer }
+        restoreSuccessRate: { type: number, format: float }
+        outcome: { type: string, enum: [pass, fail, conditional] }
+    FogbondCertificate:
+      type: object
+      required: [id, familyId, missionFunction, status, expiresAt]
+      properties:
+        id: { type: string }
+        familyId: { type: string }
+        missionFunction: { type: string }
+        resilienceProfileId: { type: string }
+        trialId: { type: string }
+        humanAuthorityRole: { type: string }
+        status: { type: string, enum: [active, expired, revoked, pending] }
+        issuedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time }
+    BondIssueRequest:
+      type: object
+      required: [familyId, missionFunction, resilienceProfileId, trialId, humanAuthorityRole, validityHours]
+      properties:
+        familyId: { type: string }
+        missionFunction: { type: string }
+        resilienceProfileId: { type: string }
+        trialId: { type: string }
+        humanAuthorityRole: { type: string }
+        validityHours: { type: integer }
+    AnomalyEvent:
+      type: object
+      required: [id, familyId, anomalyType, detectedAt]
+      properties:
+        id: { type: string }
+        familyId: { type: string }
+        nodeId: { type: string }
+        anomalyType: { type: string, enum: [drift, deception, malware, jam, unexplained] }
+        severity: { type: string, enum: [low, medium, high, critical] }
+        detectedAt: { type: string, format: date-time }
+    AnomalyEventCreate:
+      type: object
+      required: [familyId, anomalyType]
+      properties:
+        familyId: { type: string }
+        nodeId: { type: string }
+        anomalyType: { type: string, enum: [drift, deception, malware, jam, unexplained] }
+        severity: { type: string, enum: [low, medium, high, critical] }
+        detail: { type: string }
+    QuarantineOrder:
+      type: object
+      properties:
+        id: { type: string }
+        familyId: { type: string }
+        anomalyId: { type: string }
+        status: { type: string, enum: [active, lifted] }
+        createdAt: { type: string, format: date-time }
+    StateRestoreRecord:
+      type: object
+      required: [id, nodeId, disconnectMinutes]
+      properties:
+        id: { type: string }
+        nodeId: { type: string }
+        disconnectMinutes: { type: integer }
+        inferredStateSummary: { type: string }
+        receivedStateSummary: { type: string }
+        divergenceFlags:
+          type: array
+          items: { type: string }
+        restoredAt: { type: string, format: date-time }
+    StateRestoreRecordCreate:
+      type: object
+      required: [nodeId, disconnectMinutes]
+      properties:
+        nodeId: { type: string }
+        disconnectMinutes: { type: integer }
+        inferredStateSummary: { type: string }
+        receivedStateSummary: { type: string }
+        divergenceFlags:
+          type: array
+          items: { type: string }
+    BondCoverageReport:
+      type: object
+      properties:
+        killChain: { type: string }
+        agentsFielded: { type: integer }
+        agentsWithActiveBond: { type: integer }
+        coverageRate: { type: number, format: float }
+        monocultureRiskScore: { type: number, format: float }
+        uniqueFamilies: { type: integer }
+
+    DataEnvelopeAgentFamily:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/AgentFamily' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeAgentFamily:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AgentFamily' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeResilienceProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ResilienceProfile' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeResilienceProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ResilienceProfile' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeContestedTrial:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ContestedTrial' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeContestedTrial:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ContestedTrial' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeFogbondCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/FogbondCertificate' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeFogbondCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/FogbondCertificate' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeAnomalyEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/AnomalyEvent' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeAnomalyEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AnomalyEvent' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeQuarantineOrder:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/QuarantineOrder' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeQuarantineOrder:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/QuarantineOrder' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeStateRestoreRecord:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/StateRestoreRecord' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeStateRestoreRecord:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/StateRestoreRecord' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+
+    DataEnvelopeBondCoverageReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/BondCoverageReport' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeBondCoverageReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/BondCoverageReport' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
